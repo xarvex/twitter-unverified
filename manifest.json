@@ -2,18 +2,18 @@
     "manifest_version": 2,
     "name": "Twitter Unverified",
     "version": "0.0.0",
-    "description": "Hide Tweets and replies from verified Twitter users.",
+    "description": "Hide Tweets and replies from Twitter Blue users.",
     "content_scripts": [
         {
             "matches": [
-                "*://*.twitter.com/*/status/*"
+                "*://*.twitter.com/*"
             ],
             "js": [
-                "reply.js"
-            ],
-            "css": [
-                "reply.css"
+                "inject.js"
             ]
         }
+    ],
+    "web_accessible_resources": [
+        "xhr.js"
     ]
 }
