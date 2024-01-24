@@ -135,7 +135,7 @@
             for (let i = 0; i < instructions.length; i++) {
                 const instruction = instructions[i];
                 if (instruction["type"] === "TimelineAddEntries") {
-                    let entries = instruction["entries"];
+                    const entries = instruction["entries"];
                     for (let j = 0; j < entries.length; j++) {
                         const entry = entries[j]["content"];
                         switch (entry["entryType"]) {
@@ -143,7 +143,7 @@
                                 handlePost(entry["itemContent"]);
                                 break;
                             case "TimelineTimelineModule": // thread
-                                let posts = entry["items"];
+                                const posts = entry["items"];
                                 for (let k = 0; k < posts.length; k++)
                                     handlePost(posts[k]["item"]["itemContent"]);
                                 break
@@ -183,7 +183,7 @@
     // a symbol could be used, but this ensures that multiple instances of
     // the extension will not run for the same request
     const hookedIdentifier = "_xarvex/twitter-unverified/xhr_response_hooked$";
-    let xmlOpen = XMLHttpRequest.prototype.open;
+    const xmlOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(...args) {
         if (args.length >= 2 && args[0] !== "") {
             // home
