@@ -12,6 +12,14 @@
             "js": [
                 "inject.js"
             ]
+        },
+        {
+            "matches": [
+                "*://*.twitter.com/*"
+            ],
+            "js": [
+                "annoyance.js"
+            ]
         }
     ],
     "web_accessible_resources": [
