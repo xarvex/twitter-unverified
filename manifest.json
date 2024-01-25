@@ -5,6 +5,7 @@
     "description": "Hide Tweets and replies from Twitter Blue users.",
     "content_scripts": [
         {
+            "run_at": "document_start",
             "matches": [
                 "*://*.twitter.com/*"
             ],
