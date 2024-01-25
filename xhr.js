@@ -204,7 +204,7 @@
                 }
             }
             // search
-            else if (args[1].search("https://twitter.com/i/api/.+/SearchTimeline") === 0) {
+            else if (args[1].search("https://twitter.com/i/api/graphql/.+/SearchTimeline") === 0) {
                 if (!this[hookedIdentifier]) {
                     this[hookedIdentifier] = true;
                     overrideResponse(this, TimelineType.SEARCH);
