@@ -190,28 +190,28 @@
     XMLHttpRequest.prototype.open = function(...args) {
         if (args.length >= 2 && args[0] !== "") {
             // home
-            if (args[1].search("https://twitter.com/i/api/graphql/.+/Home(?:Latest)?Timeline") !== -1) {
+            if (args[1].search("https://twitter.com/i/api/graphql/.+/Home(?:Latest)?Timeline") === 0) {
                 if (!this[hookedIdentifier]) {
                     this[hookedIdentifier] = true;
                     overrideResponse(this, TimelineType.HOME);
                 }
             }
             // replies
-            if (args[1].search("https://twitter.com/i/api/graphql/.+/TweetDetail") !== -1) {
+            else if (args[1].search("https://twitter.com/i/api/graphql/.+/TweetDetail") === 0) {
                 if (!this[hookedIdentifier]) {
                     this[hookedIdentifier] = true;
                     overrideResponse(this, TimelineType.REPLIES);
                 }
             }
             // search
-            if (args[1].search("https://twitter.com/i/api/.+/SearchTimeline") !== -1) {
+            else if (args[1].search("https://twitter.com/i/api/.+/SearchTimeline") === 0) {
                 if (!this[hookedIdentifier]) {
                     this[hookedIdentifier] = true;
                     overrideResponse(this, TimelineType.SEARCH);
                 }
             }
             // profile
-            if (args[1].search("https://twitter.com/i/api/graphql/.+/User(?:Tweets|Media)") !== -1) {
+            else if (args[1].search("https://twitter.com/i/api/graphql/.+/User(?:Tweets|Media)") === 0) {
                 if (!this[hookedIdentifier]) {
                     this[hookedIdentifier] = true;
                     overrideResponse(this, TimelineType.PROFILE);
