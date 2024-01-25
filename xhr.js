@@ -113,7 +113,8 @@
     const TimelineType = {
         HOME: Symbol(),
         REPLIES: Symbol(),
-        SEARCH: Symbol()
+        SEARCH: Symbol(),
+        PROFILE: Symbol()
     };
 
     // do not reassign data, so value can be modified and returned
@@ -129,6 +130,8 @@
             case TimelineType.SEARCH:
                 instructions = data["data"]["search_by_raw_query"]["search_timeline"]["timeline"]["instructions"];
                 break;
+            case TimelineType.PROFILE:
+                instructions = data["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"];
         }
 
         if (instructions)
@@ -205,6 +208,13 @@
                 if (!this[hookedIdentifier]) {
                     this[hookedIdentifier] = true;
                     overrideResponse(this, TimelineType.SEARCH);
+                }
+            }
+            // profile
+            if (args[1].search("https://twitter.com/i/api/graphql/.+/User(?:Tweets|Media)") !== -1) {
+                if (!this[hookedIdentifier]) {
+                    this[hookedIdentifier] = true;
+                    overrideResponse(this, TimelineType.PROFILE);
                 }
             }
         }
