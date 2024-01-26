@@ -191,7 +191,6 @@
                 // reversed due to deletion of elements, would repeat otherwise
                 for (let i = data.length - 1; i >= 0; i--) {
                     const userData = data[i]["user"];
-                    console.log(userData);
                     const user = new TwitterUser(
                         userData["id_str"],
                         userData["screen_name"],
