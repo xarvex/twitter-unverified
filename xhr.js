@@ -160,6 +160,7 @@
                 break;
             case TimelineType.PROFILE:
                 instructions = data["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"];
+                break;
         }
 
         if (instructions)
