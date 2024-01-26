@@ -187,6 +187,7 @@
                 break;
             case APIType.CONNECT:
                 instructions = data["data"]["connect_tab_timeline"]["timeline"]["instructions"];
+                break;
             case APIType.USER_RECOMMENDATIONS:
                 // reversed due to deletion of elements, would repeat otherwise
                 for (let i = data.length - 1; i >= 0; i--) {
