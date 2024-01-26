@@ -8,20 +8,27 @@
     };
 
     class TwitterUser {
-        constructor(userData) {
-            const legacyUserData = userData["legacy"];
-
-            this.id = userData["rest_id"];
-            this.handle = legacyUserData["screen_name"];
-            this.name = legacyUserData["name"];
-            this.followers = legacyUserData["followers_count"];
-            this.followed = legacyUserData?.["following"];
-            this.blocked = legacyUserData?.["blocking"];
-            this.blue = userData["is_blue_verified"];
-            this.verificationType = legacyUserData?.["verified_type"];
-            this.affiliated = userData?.["affiliates_highlighted_label"]?.["label"]?.["userLabelType"];
-        }
-        shouldHide() {
+        constructor(
+            id,
+            handle,
+            name,
+            followers,
+            followed = false,
+            blocked = false,
+            blue = false,
+            verificationType = null,
+            affiliated = null
+        ) {
+            this.id = id
+            this.handle = handle;
+            this.name = name;
+            this.followers = followers;
+            this.followed = followed;
+            this.blocked = blocked;
+            this.blue = blue;
+            this.verificationType = verificationType;
+            this.affiliated = affiliated === "BusinessLabel" || affiliated === "business_label" ? "Business" : affiliated;
+        } shouldHide() {
             if (!this.followed) {
                 if (this.verificationType === "Business")
                     return UserFactor.BUSINESS;
@@ -36,8 +43,23 @@
             window.dispatchEvent(new CustomEvent("xarvex/twitter-unverified/UserHidden", { detail: this }));
         }
     }
+    TwitterUser.fromData = function(userData) {
+        const legacyUserData = userData["legacy"];
+
+        return new TwitterUser(
+            userData["rest_id"],
+            legacyUserData["screen_name"],
+            legacyUserData["name"],
+            legacyUserData["followers_count"],
+            legacyUserData?.["following"],
+            legacyUserData?.["blocking"],
+            userData["is_blue_verified"],
+            legacyUserData?.["verified_type"],
+            userData?.["affiliates_highlighted_label"]?.["label"]?.["userLabelType"],
+        );
+    };
     TwitterUser.fromPost = function(resultData) {
-        return new TwitterUser(resultData["result"]["core"]["user_results"]["result"]);
+        return TwitterUser.fromData(resultData["result"]["core"]["user_results"]["result"]);
     };
 
     function hidePost(postResultData, hard = false, factor = UserFactor.BLUE) {
@@ -97,8 +119,8 @@
         return false;
     }
 
-    function handleUser(timelineUserData) {
-        const user = new TwitterUser(timelineUserData["user_results"]["result"]);
+    function handleTimelineUser(timelineUserData) {
+        const user = TwitterUser.fromData(timelineUserData["user_results"]["result"]);
 
         const factor = user.shouldHide();
         if (factor != null) {
@@ -108,20 +130,21 @@
         }
     }
 
-    const TimelineType = {
+    const APIType = {
         HOME: Symbol(),
         REPLIES: Symbol(),
         SEARCH: Symbol(),
         PROFILE: Symbol(),
-        CONNECT: Symbol()
+        CONNECT: Symbol(),
+        USER_RECOMMENDATIONS: Symbol()
     };
 
-    function isPost(contentData) {
+    function isTimelinePost(contentData) {
         return contentData["__typename"] === "TimelineTweet" &&
             contentData["tweet_results"]?.["result"]?.["__typename"] === "Tweet";
     }
 
-    function isUser(contentData) {
+    function isTimelineUser(contentData) {
         return contentData["__typename"] === "TimelineUser" &&
             contentData["user_results"]["result"]["__typename"] === "User";
     }
@@ -130,40 +153,64 @@
         switch (entry["entryType"]) {
             case "TimelineTimelineItem": // post
                 const timelineItemData = entry["itemContent"];
-                if (isPost(timelineItemData))
+                if (isTimelinePost(timelineItemData))
                     handlePost(timelineItemData["tweet_results"]);
                 break;
             case "TimelineTimelineModule": // thread
                 const timelineItemsData = entry["items"];
                 for (let k = 0; k < timelineItemsData.length; k++) {
                     const timelineItemData = timelineItemsData[k]["item"]["itemContent"];
-                    if (isPost(timelineItemData))
+                    if (isTimelinePost(timelineItemData))
                         handlePost(timelineItemData["tweet_results"]);
-                    else if (isUser(timelineItemData))
-                        handleUser(timelineItemData);
+                    else if (isTimelineUser(timelineItemData))
+                        handleTimelineUser(timelineItemData);
                 }
                 break
         }
     }
 
     // do not reassign data, so value can be modified and returned
-    function parseTimeline(data, type) {
+    function parseAPIData(data, type) {
         let instructions;
         switch (type) {
-            case TimelineType.HOME:
+            case APIType.HOME:
                 instructions = data["data"]["home"]["home_timeline_urt"]["instructions"];
                 break;
-            case TimelineType.REPLIES:
+            case APIType.REPLIES:
                 instructions = data["data"]["threaded_conversation_with_injections_v2"]["instructions"];
                 break;
-            case TimelineType.SEARCH:
+            case APIType.SEARCH:
                 instructions = data["data"]["search_by_raw_query"]["search_timeline"]["timeline"]["instructions"];
                 break;
-            case TimelineType.PROFILE:
+            case APIType.PROFILE:
                 instructions = data["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"];
                 break;
-            case TimelineType.CONNECT:
+            case APIType.CONNECT:
                 instructions = data["data"]["connect_tab_timeline"]["timeline"]["instructions"];
+            case APIType.USER_RECOMMENDATIONS:
+                // reversed due to deletion of elements, would repeat otherwise
+                for (let i = data.length - 1; i >= 0; i--) {
+                    const userData = data[i]["user"];
+                    console.log(userData);
+                    const user = new TwitterUser(
+                        userData["id_str"],
+                        userData["screen_name"],
+                        userData["name"],
+                        userData["followers_count"],
+                        userData["following"],
+                        userData["blocking"],
+                        userData["ext_is_blue_verified"],
+                        userData["ext_verified_type"],
+                        userData["ext_highlighted_label"]?.["user_label_type"]
+                    );
+
+                    const factor = user.shouldHide();
+                    if (factor != null) {
+                        data.splice(i, 1);
+                        user.markHidden(factor);
+                    }
+                }
+                break;
         }
 
         if (instructions != null)
@@ -186,7 +233,7 @@
         return data;
     }
 
-    function overrideResponse(xhr, timelineType) {
+    function overrideResponse(xhr, apiType) {
         function override() {
             Object.defineProperty(xhr, "responseText", {
                 get: function() {
@@ -195,7 +242,7 @@
 
                     let responseText = original;
                     try {
-                        responseText = JSON.stringify(parseTimeline(JSON.parse(responseText), timelineType));
+                        responseText = JSON.stringify(parseAPIData(JSON.parse(responseText), apiType));
                     } catch (e) {
                         // TODO: error handling
                         console.error(e);
@@ -215,10 +262,10 @@
     // the extension will not run for the same request
     const hookedIdentifier = "_xarvex/twitter-unverified/xhr_response_hooked$";
 
-    function overrideAPIRoute(xhr, url, timelineType, routeMatch) {
-        if (url.search(`https://twitter.com/i/api/graphql/.+/${routeMatch}`) === 0) {
+    function overrideAPIRoute(xhr, url, apiType, routeMatch, apiMatch = "graphql/.+") {
+        if (url.search(`https://twitter.com/i/api/${apiMatch}/${routeMatch}`) === 0) {
             xhr[hookedIdentifier] = true;
-            overrideResponse(xhr, timelineType);
+            overrideResponse(xhr, apiType);
 
             return true;
         }
@@ -229,11 +276,12 @@
     const xmlOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(...args) {
         if (!this[hookedIdentifier] && args.length >= 2) {
-            overrideAPIRoute(this, args[1], TimelineType.HOME, "Home(?:Latest)?Timeline") ||
-                overrideAPIRoute(this, args[1], TimelineType.REPLIES, "TweetDetail") ||
-                overrideAPIRoute(this, args[1], TimelineType.SEARCH, "SearchTimeline") ||
-                overrideAPIRoute(this, args[1], TimelineType.PROFILE, "User(?:Tweets|Media)") ||
-                overrideAPIRoute(this, args[1], TimelineType.CONNECT, "ConnectTabTimeline")
+            overrideAPIRoute(this, args[1], APIType.HOME, "Home(?:Latest)?Timeline") ||
+                overrideAPIRoute(this, args[1], APIType.REPLIES, "TweetDetail") ||
+                overrideAPIRoute(this, args[1], APIType.SEARCH, "SearchTimeline") ||
+                overrideAPIRoute(this, args[1], APIType.PROFILE, "User(?:Tweets|Media)") ||
+                overrideAPIRoute(this, args[1], APIType.CONNECT, "ConnectTabTimeline") ||
+                overrideAPIRoute(this, args[1], APIType.USER_RECOMMENDATIONS, "users/recommendations\.json", "1\.1")
         }
 
         xmlOpen.apply(this, args);
