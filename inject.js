@@ -16,8 +16,7 @@ script.onload = function() {
 };
 
 /* TODO
- * use user in local storage to filter out tweets on initial page load,
- * which does not get intercepted by xhr.js
+ * display on settings page with the option to whitelist users
  *
 window.addEventListener("xarvex/twitter-unverified/UserHidden", function(event) {
     if (event.target === window)
