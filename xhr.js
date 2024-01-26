@@ -225,13 +225,11 @@
 
     const xmlOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(...args) {
-        if (!this[hookedIdentifier]) {
-            if (args.length >= 2 && args[0] !== "") {
-                overrideAPIRoute(this, args[1], TimelineType.HOME, "Home(?:Latest)?Timeline") ||  // home
-                    overrideAPIRoute(this, args[1], TimelineType.REPLIES, "TweetDetail") ||       // replies
-                    overrideAPIRoute(this, args[1], TimelineType.SEARCH, "SearchTimeline") ||     // search
-                    overrideAPIRoute(this, args[1], TimelineType.PROFILE, "User(?:Tweets|Media)") // profile
-            }
+        if (!this[hookedIdentifier] && args.length >= 2 && args[0] !== "") {
+            overrideAPIRoute(this, args[1], TimelineType.HOME, "Home(?:Latest)?Timeline") ||  // home
+                overrideAPIRoute(this, args[1], TimelineType.REPLIES, "TweetDetail") ||       // replies
+                overrideAPIRoute(this, args[1], TimelineType.SEARCH, "SearchTimeline") ||     // search
+                overrideAPIRoute(this, args[1], TimelineType.PROFILE, "User(?:Tweets|Media)") // profile
         }
 
         xmlOpen.apply(this, args);
