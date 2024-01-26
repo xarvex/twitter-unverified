@@ -8,26 +8,18 @@
     };
 
     class TwitterUser {
-        constructor(
-            id,
-            handle,
-            name,
-            followers,
-            followed = false,
-            blocked = false,
-            blue = false,
-            verificationType = null,
-            affiliated = null
-        ) {
-            this.id = id
-            this.handle = handle;
-            this.name = name;
-            this.followers = followers;
-            this.followed = followed;
-            this.blocked = blocked;
-            this.blue = blue;
-            this.verificationType = verificationType;
-            this.affiliated = affiliated;
+        constructor(userData) {
+            const legacyUserData = userData["legacy"];
+
+            this.id = userData["rest_id"];
+            this.handle = legacyUserData["screen_name"];
+            this.name = legacyUserData["name"];
+            this.followers = legacyUserData["followers_count"];
+            this.followed = legacyUserData?.["following"];
+            this.blocked = legacyUserData?.["blocking"];
+            this.blue = userData["is_blue_verified"];
+            this.verificationType = legacyUserData?.["verified_type"];
+            this.affiliated = userData?.["affiliates_highlighted_label"]?.["label"]?.["userLabelType"];
         }
         shouldHide() {
             if (!this.followed) {
@@ -45,29 +37,16 @@
         }
     }
     TwitterUser.fromPost = function(resultData) {
-        const userData = resultData["result"]["core"]["user_results"]["result"];
-        const legacyUserData = userData["legacy"];
-
-        return new TwitterUser(
-            userData["rest_id"],
-            legacyUserData["screen_name"],
-            legacyUserData["name"],
-            legacyUserData["followers_count"],
-            legacyUserData?.["following"],
-            legacyUserData?.["blocking"],
-            userData["is_blue_verified"],
-            legacyUserData?.["verified_type"],
-            userData?.["affiliates_highlighted_label"]?.["label"]?.["userLabelType"],
-        );
+        return new TwitterUser(resultData["result"]["core"]["user_results"]["result"]);
     };
 
-    function hidePost(resultData, hard = false, factor = UserFactor.BLUE) {
+    function hidePost(postResultData, hard = false, factor = UserFactor.BLUE) {
         if (hard)
-            resultData["result"]["__typename"] = "";
+            postResultData["result"]["__typename"] = "";
         else {
-            const old = structuredClone(resultData["result"]);
-            delete resultData["result"];
-            resultData["result"] = {
+            const old = structuredClone(postResultData["result"]);
+            delete postResultData["result"];
+            postResultData["result"] = {
                 "__typename": "TweetWithVisibilityResults",
                 "tweet": old,
                 "tweetInterstitial": {
@@ -88,27 +67,27 @@
         }
     }
 
-    function handlePost(resultData) {
-        const user = TwitterUser.fromPost(resultData);
+    function handlePost(postResultData) {
+        const user = TwitterUser.fromPost(postResultData);
 
         const factor = user.shouldHide();
         if (factor != null) {
-            hidePost(resultData, false, factor);
+            hidePost(postResultData, false, factor);
             user.markHidden(factor);
 
             return true;
         } else {
-            const quotedResultData = resultData["result"]["quoted_status_result"];
+            const quotedResultData = postResultData["result"]["quoted_status_result"];
             if (quotedResultData != null)
                 handlePost(quotedResultData);
             else {
-                const repostResultData = resultData["result"]["legacy"]?.["retweeted_status_result"];
+                const repostResultData = postResultData["result"]["legacy"]?.["retweeted_status_result"];
                 if (repostResultData != null) {
                     const user = TwitterUser.fromPost(repostResultData);
 
                     const factor = user.shouldHide();
                     if (factor != null) {
-                        hidePost(resultData, false, factor);
+                        hidePost(postResultData, false, factor);
                         user.markHidden(factor);
                     }
                 }
@@ -118,11 +97,23 @@
         return false;
     }
 
+    function handleUser(timelineUserData) {
+        const user = new TwitterUser(timelineUserData["user_results"]["result"]);
+
+        const factor = user.shouldHide();
+        if (factor != null) {
+            // no true "hiding" mechanism exists, must remove
+            timelineUserData["user_results"]["result"]["__typename"] = "";
+            user.markHidden(factor);
+        }
+    }
+
     const TimelineType = {
         HOME: Symbol(),
         REPLIES: Symbol(),
         SEARCH: Symbol(),
-        PROFILE: Symbol()
+        PROFILE: Symbol(),
+        CONNECT: Symbol()
     };
 
     function isPost(contentData) {
@@ -130,19 +121,26 @@
             contentData["tweet_results"]?.["result"]?.["__typename"] === "Tweet";
     }
 
+    function isUser(contentData) {
+        return contentData["__typename"] === "TimelineUser" &&
+            contentData["user_results"]["result"]["__typename"] === "User";
+    }
+
     function handleInstructionEntry(entry) {
         switch (entry["entryType"]) {
             case "TimelineTimelineItem": // post
-                const contentData = entry["itemContent"];
-                if (isPost(contentData))
-                    handlePost(contentData["tweet_results"]);
+                const timelineItemData = entry["itemContent"];
+                if (isPost(timelineItemData))
+                    handlePost(timelineItemData["tweet_results"]);
                 break;
             case "TimelineTimelineModule": // thread
-                const contentsData = entry["items"];
-                for (let k = 0; k < contentsData.length; k++) {
-                    const contentData = contentsData[k]["item"]["itemContent"];
-                    if (isPost(contentData))
-                        handlePost(contentData["tweet_results"]);
+                const timelineItemsData = entry["items"];
+                for (let k = 0; k < timelineItemsData.length; k++) {
+                    const timelineItemData = timelineItemsData[k]["item"]["itemContent"];
+                    if (isPost(timelineItemData))
+                        handlePost(timelineItemData["tweet_results"]);
+                    else if (isUser(timelineItemData))
+                        handleUser(timelineItemData);
                 }
                 break
         }
@@ -164,6 +162,8 @@
             case TimelineType.PROFILE:
                 instructions = data["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"];
                 break;
+            case TimelineType.CONNECT:
+                instructions = data["data"]["connect_tab_timeline"]["timeline"]["instructions"];
         }
 
         if (instructions != null)
@@ -229,10 +229,11 @@
     const xmlOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(...args) {
         if (!this[hookedIdentifier] && args.length >= 2) {
-            overrideAPIRoute(this, args[1], TimelineType.HOME, "Home(?:Latest)?Timeline") ||  // home
-                overrideAPIRoute(this, args[1], TimelineType.REPLIES, "TweetDetail") ||       // replies
-                overrideAPIRoute(this, args[1], TimelineType.SEARCH, "SearchTimeline") ||     // search
-                overrideAPIRoute(this, args[1], TimelineType.PROFILE, "User(?:Tweets|Media)") // profile
+            overrideAPIRoute(this, args[1], TimelineType.HOME, "Home(?:Latest)?Timeline") ||     // home
+                overrideAPIRoute(this, args[1], TimelineType.REPLIES, "TweetDetail") ||          // replies
+                overrideAPIRoute(this, args[1], TimelineType.SEARCH, "SearchTimeline") ||        // search
+                overrideAPIRoute(this, args[1], TimelineType.PROFILE, "User(?:Tweets|Media)") || // profile
+                overrideAPIRoute(this, args[1], TimelineType.CONNECT, "ConnectTabTimeline")      // connect
         }
 
         xmlOpen.apply(this, args);
