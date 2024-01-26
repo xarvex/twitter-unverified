@@ -1,19 +1,30 @@
-const premium_ad_query = "aside[aria-label='Subscribe to Premium']";
-const premium_ad = document.querySelector(premium_ad_query);
-if (premium_ad != null)
-    premium_ad.parentElement.remove();
-
-// even if element(s) loaded on initial page, Twitter does not do complete reloading
-new MutationObserver(function(mutations) {
+const observedQueries = [];
+const elementObserver = new MutationObserver(function(mutations) {
     for (let i = 0; i < mutations.length; i++) {
         const mutation = mutations[i];
         for (let j = 0; j < mutation.addedNodes.length; j++) {
             const node = mutation.addedNodes[j];
-            if (node instanceof HTMLElement) {
-                const premium_ad = node.querySelector(premium_ad_query) ?? node.closest(premium_ad_query);
-                if (premium_ad != null)
-                    premium_ad.parentElement.remove();
-            }
+            if (node instanceof HTMLElement)
+                for (let k = 0; k < observedQueries.length; k++) {
+                    const element = document.querySelector(observedQueries[k][0]);
+                    if (element != null)
+                        observedQueries[k][1](element);
+                }
         }
     }
-}).observe(document.body, { childList: true, subtree: true });
+});
+elementObserver.observe(document.body, { childList: true, subtree: true });
+
+function onElement(query, callback) {
+    const element = document.querySelector(query);
+    if (element != null)
+        callback(element);
+    observedQueries.push([query, callback]);
+}
+
+onElement("aside[aria-label='Subscribe to Premium']", function(element) {
+    element.parentElement.remove();
+});
+onElement("a[aria-label='Premium']", function(element) {
+    element.style.display = "none";
+});
