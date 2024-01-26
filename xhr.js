@@ -211,36 +211,26 @@
     // a symbol could be used, but this ensures that multiple instances of
     // the extension will not run for the same request
     const hookedIdentifier = "_xarvex/twitter-unverified/xhr_response_hooked$";
+
+    function overrideAPIRoute(xhr, url, timelineType, routeMatch) {
+        if (url.search(`https://twitter.com/i/api/graphql/.+/${routeMatch}`) === 0) {
+            xhr[hookedIdentifier] = true;
+            overrideResponse(xhr, timelineType);
+
+            return true;
+        }
+
+        return false;
+    }
+
     const xmlOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(...args) {
-        if (args.length >= 2 && args[0] !== "") {
-            // home
-            if (args[1].search("https://twitter.com/i/api/graphql/.+/Home(?:Latest)?Timeline") === 0) {
-                if (!this[hookedIdentifier]) {
-                    this[hookedIdentifier] = true;
-                    overrideResponse(this, TimelineType.HOME);
-                }
-            }
-            // replies
-            else if (args[1].search("https://twitter.com/i/api/graphql/.+/TweetDetail") === 0) {
-                if (!this[hookedIdentifier]) {
-                    this[hookedIdentifier] = true;
-                    overrideResponse(this, TimelineType.REPLIES);
-                }
-            }
-            // search
-            else if (args[1].search("https://twitter.com/i/api/graphql/.+/SearchTimeline") === 0) {
-                if (!this[hookedIdentifier]) {
-                    this[hookedIdentifier] = true;
-                    overrideResponse(this, TimelineType.SEARCH);
-                }
-            }
-            // profile
-            else if (args[1].search("https://twitter.com/i/api/graphql/.+/User(?:Tweets|Media)") === 0) {
-                if (!this[hookedIdentifier]) {
-                    this[hookedIdentifier] = true;
-                    overrideResponse(this, TimelineType.PROFILE);
-                }
+        if (!this[hookedIdentifier]) {
+            if (args.length >= 2 && args[0] !== "") {
+                overrideAPIRoute(this, args[1], TimelineType.HOME, "Home(?:Latest)?Timeline") ||  // home
+                    overrideAPIRoute(this, args[1], TimelineType.REPLIES, "TweetDetail") ||       // replies
+                    overrideAPIRoute(this, args[1], TimelineType.SEARCH, "SearchTimeline") ||     // search
+                    overrideAPIRoute(this, args[1], TimelineType.PROFILE, "User(?:Tweets|Media)") // profile
             }
         }
 
