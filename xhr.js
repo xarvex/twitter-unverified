@@ -44,68 +44,74 @@
             window.dispatchEvent(new CustomEvent("xarvex/twitter-unverified/UserHidden", { detail: this }));
         }
     }
-    TwitterUser.fromPost = function(postData) {
-        if (postData["itemType"] === "TimelineTweet" && ["TweetWithVisibilityResults", "Tweet"].includes(postData["tweet_results"]["result"]["__typename"])) {
-            let contentData = postData["tweet_results"]["result"];
-            if (contentData["__typename"] === "TweetWithVisibilityResults")
-                contentData = contentData["tweet"];
+    TwitterUser.fromPost = function(resultData) {
+        const userData = resultData["result"]["core"]["user_results"]["result"];
+        const legacyUserData = userData["legacy"];
 
-            const userData = contentData["core"]["user_results"]["result"];
-            const legacyUserData = userData["legacy"];
-
-            return new TwitterUser(
-                userData["rest_id"],
-                legacyUserData["screen_name"],
-                legacyUserData["name"],
-                legacyUserData["followers_count"],
-                legacyUserData?.["following"],
-                legacyUserData?.["blocking"],
-                userData["is_blue_verified"],
-                legacyUserData?.["verified_type"],
-                userData?.["affiliates_highlighted_label"]?.["label"]?.["userLabelType"],
-            );
-        }
-
-        return null;
+        return new TwitterUser(
+            userData["rest_id"],
+            legacyUserData["screen_name"],
+            legacyUserData["name"],
+            legacyUserData["followers_count"],
+            legacyUserData?.["following"],
+            legacyUserData?.["blocking"],
+            userData["is_blue_verified"],
+            legacyUserData?.["verified_type"],
+            userData?.["affiliates_highlighted_label"]?.["label"]?.["userLabelType"],
+        );
     };
 
     function hidePost(resultData, hard = false, factor = UserFactor.BLUE) {
-        if (resultData["result"]["__typename"] === "Tweet") {
-            if (hard)
-                resultData["result"]["__typename"] = "";
-            else {
-                const old = structuredClone(resultData["result"]);
-                delete resultData["result"];
-                resultData["result"] = {
-                    "__typename": "TweetWithVisibilityResults",
-                    "tweet": old,
-                    "tweetInterstitial": {
-                        "__typename": "ContextualTweetInterstitial",
-                        "displayType": "EntireTweet",
-                        "text": {
-                            "rtl": false,
-                            "text": `Twitter ${factor.description} user hidden`,
-                            "entities": []
-                        },
-                        "revealText": {
-                            "rtl": false,
-                            "text": "View",
-                            "entities": []
-                        }
+        if (hard)
+            resultData["result"]["__typename"] = "";
+        else {
+            const old = structuredClone(resultData["result"]);
+            delete resultData["result"];
+            resultData["result"] = {
+                "__typename": "TweetWithVisibilityResults",
+                "tweet": old,
+                "tweetInterstitial": {
+                    "__typename": "ContextualTweetInterstitial",
+                    "displayType": "EntireTweet",
+                    "text": {
+                        "rtl": false,
+                        "text": `Twitter ${factor.description} user hidden`,
+                        "entities": []
+                    },
+                    "revealText": {
+                        "rtl": false,
+                        "text": "View",
+                        "entities": []
                     }
                 }
             }
         }
     }
 
-    function handlePost(contentData) {
-        const user = TwitterUser.fromPost(contentData);
+    function handlePost(resultData) {
+        const user = TwitterUser.fromPost(resultData);
 
-        const factor = user?.shouldHide();
+        const factor = user.shouldHide();
         if (factor) {
-            hidePost(contentData["tweet_results"], false, factor);
+            hidePost(resultData, false, factor);
             user.markHidden(factor);
             return true;
+        } else {
+            const quotedResultData = resultData["result"]["quoted_status_result"];
+            if (quotedResultData != null)
+                handlePost(quotedResultData);
+            else {
+                const repostResultData = resultData["result"]["legacy"]?.["retweeted_status_result"];
+                if (repostResultData != null) {
+                    const user = TwitterUser.fromPost(repostResultData);
+
+                    const factor = user.shouldHide();
+                    if (factor != null) {
+                        hidePost(resultData, false, factor);
+                        user.markHidden(factor);
+                    }
+                }
+            }
         }
         return false;
     }
@@ -116,6 +122,10 @@
         SEARCH: Symbol(),
         PROFILE: Symbol()
     };
+
+    function isPost(contentData) {
+        return contentData["__typename"] === "TimelineTweet" && contentData["tweet_results"]?.["result"]?.["__typename"] === "Tweet";
+    }
 
     // do not reassign data, so value can be modified and returned
     function parseTimeline(data, type) {
@@ -143,12 +153,17 @@
                         const entry = entries[j]["content"];
                         switch (entry["entryType"]) {
                             case "TimelineTimelineItem": // post
-                                handlePost(entry["itemContent"]);
+                                const contentData = entry["itemContent"];
+                                if (isPost(contentData))
+                                    handlePost(contentData["tweet_results"]);
                                 break;
                             case "TimelineTimelineModule": // thread
-                                const posts = entry["items"];
-                                for (let k = 0; k < posts.length; k++)
-                                    handlePost(posts[k]["item"]["itemContent"]);
+                                const contentsData = entry["items"];
+                                for (let k = 0; k < contentsData.length; k++) {
+                                    const contentData = contentsData[k]["item"]["itemContent"];
+                                    if (isPost(contentData))
+                                        handlePost(contentData["tweet_results"]);
+                                }
                                 break
                         }
                     }
