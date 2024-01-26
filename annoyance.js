@@ -1,3 +1,5 @@
+"use strict";
+
 const observedQueries = [];
 const elementObserver = new MutationObserver(function(mutations) {
     for (let i = 0; i < mutations.length; i++) {

@@ -1,3 +1,5 @@
+"use strict";
+
 /*
  * It is necessary to inject into the page not only to be able to intercept
  * Twitter's API calls in the first place, but for the ability of changes
