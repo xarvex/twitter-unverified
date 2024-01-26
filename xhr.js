@@ -92,7 +92,7 @@
         const user = TwitterUser.fromPost(resultData);
 
         const factor = user.shouldHide();
-        if (factor) {
+        if (factor != null) {
             hidePost(resultData, false, factor);
             user.markHidden(factor);
             return true;
@@ -163,7 +163,7 @@
                 break;
         }
 
-        if (instructions)
+        if (instructions != null)
             for (let i = 0; i < instructions.length; i++) {
                 const instruction = instructions[i];
                 switch (instruction["type"]) {
