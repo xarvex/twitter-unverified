@@ -28,3 +28,6 @@ onElement("aside[aria-label='Subscribe to Premium']", function(element) {
 onElement("a[aria-label='Premium']", function(element) {
     element.style.display = "none";
 });
+onElement("a[aria-label='Grok']", function(element) {
+    element.style.display = "none";
+});
