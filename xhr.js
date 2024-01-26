@@ -127,6 +127,24 @@
         return contentData["__typename"] === "TimelineTweet" && contentData["tweet_results"]?.["result"]?.["__typename"] === "Tweet";
     }
 
+    function handleInstructionEntry(entry) {
+        switch (entry["entryType"]) {
+            case "TimelineTimelineItem": // post
+                const contentData = entry["itemContent"];
+                if (isPost(contentData))
+                    handlePost(contentData["tweet_results"]);
+                break;
+            case "TimelineTimelineModule": // thread
+                const contentsData = entry["items"];
+                for (let k = 0; k < contentsData.length; k++) {
+                    const contentData = contentsData[k]["item"]["itemContent"];
+                    if (isPost(contentData))
+                        handlePost(contentData["tweet_results"]);
+                }
+                break
+        }
+    }
+
     // do not reassign data, so value can be modified and returned
     function parseTimeline(data, type) {
         let instructions;
@@ -147,26 +165,17 @@
         if (instructions)
             for (let i = 0; i < instructions.length; i++) {
                 const instruction = instructions[i];
-                if (instruction["type"] === "TimelineAddEntries") {
-                    const entries = instruction["entries"];
-                    for (let j = 0; j < entries.length; j++) {
-                        const entry = entries[j]["content"];
-                        switch (entry["entryType"]) {
-                            case "TimelineTimelineItem": // post
-                                const contentData = entry["itemContent"];
-                                if (isPost(contentData))
-                                    handlePost(contentData["tweet_results"]);
-                                break;
-                            case "TimelineTimelineModule": // thread
-                                const contentsData = entry["items"];
-                                for (let k = 0; k < contentsData.length; k++) {
-                                    const contentData = contentsData[k]["item"]["itemContent"];
-                                    if (isPost(contentData))
-                                        handlePost(contentData["tweet_results"]);
-                                }
-                                break
+                switch (instruction["type"]) {
+                    case "TimelineAddEntries":
+                        const entries = instruction["entries"];
+                        for (let j = 0; j < entries.length; j++) {
+                            const entry = entries[j]["content"];
+                            handleInstructionEntry(entry);
                         }
-                    }
+                        break;
+                    case "TimelinePinEntry":
+                        handleInstructionEntry(instruction["entry"]["content"]);
+                        break;
                 }
             }
 
