@@ -95,6 +95,7 @@
         if (factor != null) {
             hidePost(resultData, false, factor);
             user.markHidden(factor);
+
             return true;
         } else {
             const quotedResultData = resultData["result"]["quoted_status_result"];
@@ -113,6 +114,7 @@
                 }
             }
         }
+
         return false;
     }
 
@@ -124,7 +126,8 @@
     };
 
     function isPost(contentData) {
-        return contentData["__typename"] === "TimelineTweet" && contentData["tweet_results"]?.["result"]?.["__typename"] === "Tweet";
+        return contentData["__typename"] === "TimelineTweet" &&
+            contentData["tweet_results"]?.["result"]?.["__typename"] === "Tweet";
     }
 
     function handleInstructionEntry(entry) {
