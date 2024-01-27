@@ -135,8 +135,8 @@
         REPLIES: Symbol(),
         SEARCH: Symbol(),
         PROFILE: Symbol(),
+        PROFILE_OTHER: Symbol(),
         CONNECT: Symbol(),
-        FOLLOWING: Symbol(),
         USER_RECOMMENDATIONS: Symbol()
     };
 
@@ -191,7 +191,7 @@
             case APIType.CONNECT:
                 instructions = data["data"]["connect_tab_timeline"]["timeline"]["instructions"];
                 break;
-            case APIType.FOLLOWING:
+            case APIType.PROFILE_OTHER:
                 instructions = data["data"]["user"]["result"]["timeline"]["timeline"]["instructions"];
                 break;
             case APIType.USER_RECOMMENDATIONS:
@@ -286,8 +286,8 @@
                 overrideAPIRoute(this, args[1], APIType.REPLIES, "TweetDetail") ||
                 overrideAPIRoute(this, args[1], APIType.SEARCH, "SearchTimeline") ||
                 overrideAPIRoute(this, args[1], APIType.PROFILE, "User(?:Tweets|Media)") ||
+                overrideAPIRoute(this, args[1], APIType.PROFILE_OTHER, "(?:Following|UserHighlightsTweets|UserBusinessProfileTeamTimeline)") ||
                 overrideAPIRoute(this, args[1], APIType.CONNECT, "ConnectTabTimeline") ||
-                overrideAPIRoute(this, args[1], APIType.FOLLOWING, "Following") ||
                 overrideAPIRoute(this, args[1], APIType.USER_RECOMMENDATIONS, "users/recommendations\.json", "1\.1")
         }
 
