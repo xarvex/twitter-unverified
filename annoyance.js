@@ -33,3 +33,12 @@ onElement("a[aria-label='Premium']", function(element) {
 onElement("a[aria-label='Grok']", function(element) {
     element.style.display = "none";
 });
+onElement("div[aria-label^='Subscribe to @']", function(element) {
+    element.remove();
+});
+onElement("a[href$='/superfollows']", function(element) {
+    element.parentElement.remove();
+});
+onElement("a[href$='/affiliates']", function(element) {
+    element.parentElement.remove();
+});
