@@ -269,7 +269,7 @@
     const hookedIdentifier = "_xarvex/twitter-unverified/xhr_response_hooked$";
 
     function overrideAPIRoute(xhr, url, apiType, routeMatch, apiMatch = "graphql/.+") {
-        if (url.search(`https://twitter.com/i/api/${apiMatch}/${routeMatch}`) === 0) {
+        if (url.search(`https://(?:twitter.com/i/api|api.twitter.com)/${apiMatch}/${routeMatch}`) === 0) {
             xhr[hookedIdentifier] = true;
             overrideResponse(xhr, apiType);
 
