@@ -8,9 +8,10 @@ const elementObserver = new MutationObserver(function(mutations) {
             const node = mutation.addedNodes[j];
             if (node instanceof HTMLElement)
                 for (let k = 0; k < observedQueries.length; k++) {
-                    const element = document.querySelector(observedQueries[k][0]);
+                    const [query, callback] = observedQueries[k];
+                    const element = document.querySelector(query);
                     if (element != null)
-                        observedQueries[k][1](element);
+                        callback(element);
                 }
         }
     }
