@@ -147,7 +147,7 @@
 
     function isTimelineUser(contentData) {
         return contentData["__typename"] === "TimelineUser" &&
-            contentData["user_results"]["result"]["__typename"] === "User";
+            contentData["user_results"]?.["result"]?.["__typename"] === "User";
     }
 
     function handleInstructionEntry(entry) {
