@@ -286,7 +286,7 @@
                 overrideAPIRoute(this, args[1], APIType.REPLIES, "TweetDetail") ||
                 overrideAPIRoute(this, args[1], APIType.SEARCH, "SearchTimeline") ||
                 overrideAPIRoute(this, args[1], APIType.PROFILE, "User(?:Tweets|Media)") ||
-                overrideAPIRoute(this, args[1], APIType.PROFILE_OTHER, "(?:Following|UserHighlightsTweets|UserBusinessProfileTeamTimeline)") ||
+                overrideAPIRoute(this, args[1], APIType.PROFILE_OTHER, "(?:(?:BlueVerified)?Followers|Following|UserHighlightsTweets|UserBusinessProfileTeamTimeline)") ||
                 overrideAPIRoute(this, args[1], APIType.CONNECT, "ConnectTabTimeline") ||
                 overrideAPIRoute(this, args[1], APIType.USER_RECOMMENDATIONS, "users/recommendations\.json", "1\.1")
         }
