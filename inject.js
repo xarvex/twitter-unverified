@@ -12,7 +12,7 @@
 
 const script = document.createElement("script");
 script.type = "text/javascript";
-script.src = chrome.runtime.getURL("xhr.js");
+script.src = browser.runtime.getURL("xhr.js");
 script.onload = function() {
     this.remove();
 };
