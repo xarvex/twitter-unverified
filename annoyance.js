@@ -43,3 +43,6 @@ onElement("a[href$='/superfollows']", function(element) {
 onElement("a[href$='/affiliates']", function(element) {
     element.parentElement.remove();
 });
+onElement("a[href$='/verified_followers']", function(element) {
+    element.parentElement.remove();
+});
