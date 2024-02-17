@@ -59,7 +59,9 @@
         );
     };
     TwitterUser.fromPost = function(resultData) {
-        return TwitterUser.fromData(resultData["result"]["core"]["user_results"]["result"]);
+        // post will not have a user if it is of type "TextTombstone" (account deleted)
+        const userData = resultData["result"]?.["core"]?.["user_results"]?.["result"];
+        return userData != null ? TwitterUser.fromData(userData) : null;
     };
 
     function hidePost(postResultData, hard = false, factor = UserFactor.BLUE) {
@@ -92,7 +94,7 @@
     function handlePost(postResultData) {
         const user = TwitterUser.fromPost(postResultData);
 
-        const factor = user.shouldHide();
+        const factor = user?.shouldHide();
         if (factor != null) {
             hidePost(postResultData, false, factor);
             user.markHidden(factor);
