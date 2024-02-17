@@ -57,7 +57,22 @@ onElement("a[href$='/affiliates']", async function(element) {
     if ((await fetchOptions()).removeAffiliates)
         element.parentElement.remove();
 });
+
+let signalFollowersClick = false;
 onElement("a[href$='/verified_followers']", async function(element) {
-    if ((await fetchOptions()).handleFollowers)
-        element.parentElement.remove();
+    if ((await fetchOptions()).handleFollowers) {
+        if (element.role === "link")
+            element.href = element.href.replace(/verified_followers$/, "followers");
+        else {
+            if (element.ariaSelected)
+                signalFollowersClick = true;
+            element.parentElement.remove();
+        }
+    }
+});
+onElement("a[href$='/followers'][role='tab']", async function(element) {
+    if (signalFollowersClick) {
+        element.click();
+        signalFollowersClick = false;
+    }
 });

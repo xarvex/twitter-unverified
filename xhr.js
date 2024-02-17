@@ -332,5 +332,20 @@
         xmlOpen.apply(this, args);
     };
 
+    history.pushState = (function(pushState) {
+        return function(...args) {
+            if (options.handleFollowers)
+                args[2] = args[2]?.replace(/verified_followers$/, "followers");
+            return pushState.apply(this, args);
+        }
+    })(history.pushState);
+    history.replaceState = (function(replaceState) {
+        return function(...args) {
+            if (options.handleFollowers)
+                args[2] = args[2]?.replace(/verified_followers$/, "followers");
+            return replaceState.apply(this, args);
+        }
+    })(history.replaceState);
+
     console.info("Twitter Unverified is ready - with ❤️ from Xarvex");
 })();
