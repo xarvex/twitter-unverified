@@ -10,11 +10,19 @@
  *  - https://betterprogramming.pub/dd9ebdf2348b
  */
 
+function dispatchOptions(options) {
+    // give page ownership of object
+    if (typeof cloneInto === "function")
+        options = cloneInto(options, document.defaultView);
+    window.dispatchEvent(new CustomEvent("xarvex/twitter-unverified/SettingsUpdate", { detail: options }));
+}
+
 const script = document.createElement("script");
 script.type = "text/javascript";
 script.src = browser.runtime.getURL("xhr.js");
-script.onload = function() {
+script.onload = async function() {
     this.remove();
+    dispatchOptions((await browser.storage.sync.get("options")).options);
 };
 
 /* TODO
@@ -25,4 +33,10 @@ window.addEventListener("xarvex/twitter-unverified/UserHidden", function(event) 
         console.log(event.detail);
 });
 */
+
+browser.storage.onChanged.addListener(function(event) {
+    if (event.options?.newValue != null)
+        dispatchOptions(event.options.newValue);
+});
+
 (document.head ?? document.documentElement).appendChild(script);

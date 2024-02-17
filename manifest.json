@@ -3,6 +3,22 @@
     "name": "Twitter Unverified",
     "version": "0.0.0",
     "description": "Hide Tweets and replies from Twitter Blue users.",
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "twitter-unverified@xarvex.com"
+        }
+    },
+    "permissions": [
+        "storage"
+    ],
+    "options_ui": {
+        "page": "options.html"
+    },
+    "background": {
+        "scripts": [
+            "extension.js"
+        ]
+    },
     "content_scripts": [
         {
             "run_at": "document_start",

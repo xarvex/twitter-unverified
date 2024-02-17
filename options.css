@@ -1,0 +1,12 @@
+.row {
+    padding-bottom: 10px;
+    display: block;
+}
+
+.inner {
+    padding-left: 20px;
+}
+
+input.numeric {
+    width: 80px;
+}

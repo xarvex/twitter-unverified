@@ -25,24 +25,39 @@ function onElement(query, callback) {
     observedQueries.push([query, callback]);
 }
 
-onElement("aside[aria-label='Subscribe to Premium']", function(element) {
-    element.parentElement.remove();
+async function fetchOptions() {
+    return (await browser.storage.sync.get("options")).options
+}
+
+
+onElement("aside[aria-label='Subscribe to Premium']", async function(element) {
+    if ((await fetchOptions()).removePremiumAds)
+        element.parentElement.remove();
 });
-onElement("a[aria-label='Premium']", function(element) {
-    element.style.display = "none";
+onElement("a[aria-label='Premium']", async function(element) {
+    if ((await fetchOptions()).removePremiumAds)
+        element.style.display = "none";
 });
-onElement("a[aria-label='Grok']", function(element) {
-    element.style.display = "none";
+
+onElement("a[aria-label='Grok']", async function(element) {
+    if ((await fetchOptions()).removeGrok)
+        element.style.display = "none";
 });
-onElement("div[aria-label^='Subscribe to @']", function(element) {
-    element.remove();
+
+onElement("div[aria-label^='Subscribe to @']", async function(element) {
+    if ((await fetchOptions()).removeSubscriptions)
+        element.remove();
 });
-onElement("a[href$='/superfollows']", function(element) {
-    element.parentElement.remove();
+onElement("a[href$='/superfollows']", async function(element) {
+    if ((await fetchOptions()).removeSubscriptions)
+        element.parentElement.remove();
 });
-onElement("a[href$='/affiliates']", function(element) {
-    element.parentElement.remove();
+
+onElement("a[href$='/affiliates']", async function(element) {
+    if ((await fetchOptions()).removeAffiliates)
+        element.parentElement.remove();
 });
-onElement("a[href$='/verified_followers']", function(element) {
-    element.parentElement.remove();
+onElement("a[href$='/verified_followers']", async function(element) {
+    if ((await fetchOptions()).handleFollowers)
+        element.parentElement.remove();
 });

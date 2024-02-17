@@ -2,6 +2,11 @@
 
 // define function and run immediately to keep scope
 (function() {
+    let options = {};
+    window.addEventListener("xarvex/twitter-unverified/SettingsUpdate", function(event) {
+        options = event.detail;
+    });
+
     const UserFactor = {
         BLUE: Symbol("Blue"),
         BUSINESS: Symbol("Business")
@@ -29,17 +34,24 @@
             this.verificationType = verificationType;
             this.affiliated = affiliated === "BusinessLabel" || affiliated === "business_label" ? "Business" : affiliated;
         } shouldHide() {
-            if (!this.followed) {
-                if (this.verificationType === "Business")
-                    return UserFactor.BUSINESS;
-                else if (this.blue)
+            if (!this.followed && !window.location.pathname.startsWith(`/${this.handle}`)) {
+                if (this.verificationType === "Business") {
+                    if (options.businessTarget &&
+                        (options.businessFollowerThreshold === -1 ||
+                            this.followers > options.businessFollowerThreshold))
+                        return UserFactor.BUSINESS;
+                }
+                else if (this.blue && options.blueTarget &&
+                    (options.blueFollowerThreshold === -1 ||
+                        this.followers > options.blueFollowerThreshold))
                     return UserFactor.BLUE;
             }
 
             return null;
         }
         markHidden(factor) {
-            console.debug(`Hidden @${this.handle} (Twitter ${factor.description} - ${this.followers} followers)`);
+            if (options.logActions)
+                console.debug(`Hidden @${this.handle} (Twitter ${factor.description} - ${this.followers} followers)`);
             window.dispatchEvent(new CustomEvent("xarvex/twitter-unverified/UserHidden", { detail: this }));
         }
     }
@@ -137,6 +149,8 @@
         REPLIES: Symbol(),
         SEARCH: Symbol(),
         PROFILE: Symbol(),
+        PROFILE_FOLLOWERS: Symbol(),
+        PROFILE_FOLLOWING: Symbol(),
         PROFILE_OTHER: Symbol(),
         CONNECT: Symbol(),
         USER_RECOMMENDATIONS: Symbol()
@@ -179,22 +193,42 @@
         let instructions;
         switch (type) {
             case APIType.HOME:
-                instructions = data["data"]["home"]["home_timeline_urt"]["instructions"];
+                if (options.handleHome)
+                    instructions = data["data"]["home"]["home_timeline_urt"]["instructions"];
                 break;
             case APIType.REPLIES:
-                instructions = data["data"]["threaded_conversation_with_injections_v2"]["instructions"];
+                if (options.handleReplies)
+                    instructions = data["data"]["threaded_conversation_with_injections_v2"]["instructions"];
                 break;
             case APIType.SEARCH:
-                instructions = data["data"]["search_by_raw_query"]["search_timeline"]["timeline"]["instructions"];
+                if (options.handleSearch)
+                    instructions = data["data"]["search_by_raw_query"]["search_timeline"]["timeline"]["instructions"];
                 break;
             case APIType.PROFILE:
-                instructions = data["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"];
+                if (options.handleProfile)
+                    instructions = data["data"]["user"]["result"]["timeline_v2"]["timeline"]["instructions"];
                 break;
             case APIType.CONNECT:
-                instructions = data["data"]["connect_tab_timeline"]["timeline"]["instructions"];
+                if (options.handleConnect)
+                    instructions = data["data"]["connect_tab_timeline"]["timeline"]["instructions"];
                 break;
+            case APIType.PROFILE_FOLLOWERS:
+            case APIType.PROFILE_FOLLOWING:
             case APIType.PROFILE_OTHER:
-                instructions = data["data"]["user"]["result"]["timeline"]["timeline"]["instructions"];
+                let run = false;
+                switch (type) {
+                    case APIType.PROFILE_FOLLOWERS:
+                        run = options.handleFollowers;
+                        break;
+                    case APIType.PROFILE_FOLLOWING:
+                        run = options.handleFollowing;
+                        break;
+                    case APIType.PROFILE_OTHER:
+                        run = options.handleProfile;
+                        break;
+                }
+                if (run)
+                    instructions = data["data"]["user"]["result"]["timeline"]["timeline"]["instructions"];
                 break;
             case APIType.USER_RECOMMENDATIONS:
                 // reversed due to deletion of elements, would repeat otherwise
@@ -288,7 +322,9 @@
                 overrideAPIRoute(this, args[1], APIType.REPLIES, "TweetDetail") ||
                 overrideAPIRoute(this, args[1], APIType.SEARCH, "SearchTimeline") ||
                 overrideAPIRoute(this, args[1], APIType.PROFILE, "User(?:Tweets|Media)") ||
-                overrideAPIRoute(this, args[1], APIType.PROFILE_OTHER, "(?:(?:BlueVerified)?Followers|Following|UserHighlightsTweets|UserBusinessProfileTeamTimeline)") ||
+                overrideAPIRoute(this, args[1], APIType.PROFILE_FOLLOWERS, "(?:(?:BlueVerified)?Followers)") ||
+                overrideAPIRoute(this, args[1], APIType.PROFILE_FOLLOWING, "Following") ||
+                overrideAPIRoute(this, args[1], APIType.PROFILE_OTHER, "(?:UserHighlightsTweets|UserBusinessProfileTeamTimeline)") ||
                 overrideAPIRoute(this, args[1], APIType.CONNECT, "ConnectTabTimeline") ||
                 overrideAPIRoute(this, args[1], APIType.USER_RECOMMENDATIONS, "users/recommendations\.json", "1\.1")
         }

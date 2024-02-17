@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="options.css">
+</head>
+
+<body>
+    <h1 id="version-number">Twitter Unverified</h1>
+    <form id="options">
+        <section>
+            <h3>General</h3>
+            <div class="row">
+                <input id="handle-home" type="checkbox">
+                <label for="handle-home">Handle home</label>
+            </div>
+            <div class="row">
+                <input id="handle-replies" type="checkbox">
+                <label for="handle-replies">Handle post replies</label>
+            </div>
+            <div class="row">
+                <input id="handle-search" type="checkbox">
+                <label for="handle-search">Handle search</label>
+            </div>
+            <div class="row">
+                <input id="handle-profile" type="checkbox">
+                <label for="handle-profile">Handle user profile</label>
+            </div>
+            <div class="row">
+                <input id="handle-followers" type="checkbox">
+                <label for="handle-followers">Handle user followers list</label>
+            </div>
+            <div class="row">
+                <input id="handle-following" type="checkbox">
+                <label for="handle-following">Handle user following list</label>
+            </div>
+            <div class="row">
+                <input id="handle-connect" type="checkbox">
+                <label for="handle-connect">Handle connect</label>
+            </div>
+        </section>
+        <section>
+            <h3>Targeting</h3>
+            <div class="row">
+                <input id="blue-target" type="checkbox">
+                <label>Target Blue users</label>
+                <section id="blue-inner" class="inner">
+                    <div class="row">
+                        <input id="blue-hard-hide" type="checkbox">
+                        <label for="blue-hard-hide">Hard hide</label>
+                    </div>
+                    <div class="row">
+                        <label for="blue-follower-threshold">Follower threshold:</label>
+                        <input id="blue-follower-threshold" class="numeric" type="text" value="100000">
+                    </div>
+                </section>
+            </div>
+            <div class="row">
+                <input id="business-target" type="checkbox">
+                <label for="business-target">Target Business users</label>
+                <section id="business-inner" class="inner">
+                    <div class="row">
+                        <input id="business-hard-hide" type="checkbox">
+                        <label for="business-hard-hide">Hard hide</label>
+                    </div>
+                    <div class="row">
+                        <label for="business-follower-threshold">Follower threshold:</label>
+                        <input id="business-follower-threshold" class="numeric" type="text" value="1000000">
+                    </div>
+                </section>
+            </div>
+        </section>
+        <section>
+            <h3>Annoyances</h3>
+            <div class="row">
+                <input id="remove-premium-ads" type="checkbox">
+                <label for="remove-premium-ads">Remove Premium ads/banners</label>
+            </div>
+            <div class="row">
+                <input id="remove-grok" type="checkbox">
+                <label for="remove-grok">Remove Grok</label>
+            </div>
+            <div class="row">
+                <input id="remove-subscriptions" type="checkbox">
+                <label for="remove-subscriptions">Remove subscriptions</label>
+            </div>
+            <div class="row">
+                <input id="remove-affiliates" type="checkbox">
+                <label for="remove-affiliates">Remove affiliates</label>
+            </div>
+        </section>
+        <section>
+            <h3>Miscellaneous</h3>
+            <div class="row">
+                <input id="log-actions" type="checkbox">
+                <label for="log-actions">Log actions to console</label>
+            </div>
+        </section>
+
+        <button id="submit" type="submit">Save</button>
+    </form>
+
+    <script src="options.js"></script>
+</body>
+
+</html>
