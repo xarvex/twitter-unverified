@@ -158,7 +158,7 @@
                 const timelineItemData = entry["itemContent"];
                 if (isTimelinePost(timelineItemData))
                     handlePost(timelineItemData["tweet_results"]);
-                if (isTimelineUser(timelineItemData))
+                else if (isTimelineUser(timelineItemData))
                     handleTimelineUser(timelineItemData);
                 break;
             case "TimelineTimelineModule": // thread
