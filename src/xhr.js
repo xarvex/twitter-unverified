@@ -38,12 +38,12 @@
                 if (this.verificationType === "Business") {
                     if (options.businessTarget &&
                         (options.businessFollowerThreshold === -1 ||
-                            this.followers > options.businessFollowerThreshold))
+                            this.followers < options.businessFollowerThreshold))
                         return UserFactor.BUSINESS;
                 }
                 else if (this.blue && options.blueTarget &&
                     (options.blueFollowerThreshold === -1 ||
-                        this.followers > options.blueFollowerThreshold))
+                        this.followers < options.blueFollowerThreshold))
                     return UserFactor.BLUE;
             }
 
