@@ -1,0 +1,15 @@
+{
+    "name": "twitter-unverified",
+    "version": "0.0.1",
+    "scripts": {
+        "_:build": "rm -rf build/\"${PACKAGE_BUILD_BROWSER}\" && mkdir -p build/\"${PACKAGE_BUILD_BROWSER}\"/resources && cp src/* build/\"${PACKAGE_BUILD_BROWSER}\" && cp -r resources build/\"${PACKAGE_BUILD_BROWSER}\" && cp manifest_\"${PACKAGE_BUILD_BROWSER}\".json build/\"${PACKAGE_BUILD_BROWSER}\"/manifest.json",
+        "_:artifact": "mkdir -p artifacts && PACKAGE_BUILD_ARTIFACTS_DIR=\"$(mktemp -d)\" && WEB_EXT_ARTIFACTS_DIR=\"${PACKAGE_BUILD_ARTIFACTS_DIR}\" npx web-ext build -s build/\"${PACKAGE_BUILD_BROWSER}\" && PACKAGE_BUILD_ARTIFACT=\"$(find \"${PACKAGE_BUILD_ARTIFACTS_DIR}\"/*.zip -type f -printf '%f')\" && mv \"${PACKAGE_BUILD_ARTIFACTS_DIR}\"/\"${PACKAGE_BUILD_ARTIFACT}\" artifacts/\"${PACKAGE_BUILD_ARTIFACT/-/-\"${PACKAGE_BUILD_BROWSER}\"-}\"",
+        "build-firefox": "PACKAGE_BUILD_BROWSER='firefox' yarn _:build",
+        "build-firefox-v3": "PACKAGE_BUILD_BROWSER='firefox_v3' yarn _:build",
+        "builds": "yarn build-firefox && yarn build-firefox-v3",
+        "artifact-firefox": "PACKAGE_BUILD_BROWSER='firefox' yarn _:artifact",
+        "artifact-firefox-v3": "PACKAGE_BUILD_BROWSER='firefox_v3' yarn _:artifact",
+        "artifacts": "yarn artifact-firefox && yarn artifact-firefox-v3",
+        "clean": "rm -rf build artifacts"
+    }
+}
